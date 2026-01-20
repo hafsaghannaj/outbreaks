@@ -1,4 +1,6 @@
 Outbreaks
+
+
 Tagline: Preempting Waterborne Disease Outbreaks with AI and Satellite Data.
 
 Core Problem
@@ -31,3 +33,4 @@ How it Works
 Generate synthetic data that mimics environmental + socio-economic drivers.
 Train a tree-based regressor (XGBoost if available, else GradientBoosting).
 Score new coordinates and render a Folium risk map.
+
