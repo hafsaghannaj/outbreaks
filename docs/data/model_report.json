@@ -1,0 +1,22 @@
+{
+  "model": "XGBRegressor",
+  "n_rows": 500,
+  "n_features": 9,
+  "feature_cols": [
+    "sst_proxy",
+    "precip_mm",
+    "flood_proxy",
+    "chlorophyll_proxy",
+    "drought_index",
+    "pop_density",
+    "improved_water_access",
+    "sanitation_access",
+    "mobility_disruption"
+  ],
+  "target_col": "risk_score",
+  "metrics": {
+    "MAE": 5.4252976333524705,
+    "RMSE": 6.733009879532971,
+    "R2": 0.8921197578213008
+  }
+}
