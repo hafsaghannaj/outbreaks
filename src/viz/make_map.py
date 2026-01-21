@@ -41,6 +41,26 @@ def add_legend(m: folium.Map) -> None:
     m.get_root().html.add_child(folium.Element(legend_html))
 
 
+def add_status_box(m: folium.Map, n_points: int, min_risk: float, shown_min: float, shown_max: float) -> None:
+    status_html = f"""
+    <div style="
+        position: fixed;
+        bottom: 30px; right: 30px; z-index: 9999;
+        background: white; padding: 10px 12px;
+        border: 1px solid #ccc; border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        font-size: 13px; line-height: 1.4;
+        max-width: 260px;
+        ">
+      <div style="font-weight: 700; margin-bottom: 6px;">Map Status</div>
+      <div><b>Points shown:</b> {n_points}</div>
+      <div><b>Min-risk filter:</b> {min_risk:.1f}</div>
+      <div><b>Shown risk range:</b> {shown_min:.1f} – {shown_max:.1f}</div>
+    </div>
+    """
+    m.get_root().html.add_child(folium.Element(status_html))
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Render Folium risk map from scored points.")
     p.add_argument("--min-risk", type=float, default=0.0, help="Only plot points with predicted_risk_score >= min-risk")
@@ -57,12 +77,16 @@ def main() -> None:
     if df.empty:
         raise SystemExit(f"No points to plot after filtering with --min-risk {args.min_risk}")
 
+    shown_min = float(df["predicted_risk_score"].min())
+    shown_max = float(df["predicted_risk_score"].max())
+
     m = folium.Map(
         location=[float(df["lat"].mean()), float(df["lon"].mean())],
         zoom_start=6,
         control_scale=True,
     )
     add_legend(m)
+    add_status_box(m, len(df), args.min_risk, shown_min, shown_max)
 
     cluster = MarkerCluster(name="Risk Points").add_to(m)
 
