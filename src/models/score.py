@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from pathlib import Path
-
+import json
 import numpy as np
 import pandas as pd
 
 from src.config.settings import RESULTS_DIR, RISK_MIN, RISK_MAX
 
-# Same feature set used in training
 FEATURE_COLS = [
     "sst_proxy",
     "precip_mm",
@@ -20,24 +18,43 @@ FEATURE_COLS = [
     "mobility_disruption",
 ]
 
-TARGET_COL = "risk_score"
 
+def load_saved_model():
+    report_path = RESULTS_DIR / "model_report.json"
+    if not report_path.exists():
+        raise FileNotFoundError(
+            f"Missing {report_path}. Run: python -m src.models.train"
+        )
 
-def load_model():
-    # Re-train quickly for MVP simplicity (we'll persist model artifacts later)
-    # This keeps it deterministic given the same dataset.
-    from src.models.train import train_model
+    with open(report_path, "r") as f:
+        report = json.load(f)
 
-    df = pd.read_csv(RESULTS_DIR / "synthetic_training_data.csv")
-    model, report = train_model(df)
-    return model
+    model_name = report.get("model")
+    artifact = report.get("model_artifact")
+    if not artifact:
+        raise FileNotFoundError(
+            "model_artifact not found in model_report.json. Re-run training."
+        )
+
+    artifact_path = RESULTS_DIR / artifact
+    if not artifact_path.exists():
+        raise FileNotFoundError(f"Missing model artifact: {artifact_path}")
+
+    if model_name == "XGBRegressor":
+        from xgboost import XGBRegressor
+        model = XGBRegressor()
+        model.load_model(str(artifact_path))
+        return model
+
+    import joblib
+    return joblib.load(artifact_path)
 
 
 def main() -> None:
     df = pd.read_csv(RESULTS_DIR / "synthetic_training_data.csv")
 
-    model = load_model()
-    preds = model.predict(df[FEATURE_COLS])
+    model = load_saved_model()
+    preds = model.predict(df[FEATURE_COLS].to_numpy())
 
     preds = np.clip(preds, RISK_MIN, RISK_MAX)
 
@@ -47,9 +64,14 @@ def main() -> None:
     out_path = RESULTS_DIR / "risk_scored_points.csv"
     scored.to_csv(out_path, index=False)
 
+    print("Loaded saved model and scored points.")
     print("Wrote:", out_path)
     print("Rows:", len(scored))
-    print("Pred min/max:", float(scored["predicted_risk_score"].min()), float(scored["predicted_risk_score"].max()))
+    print(
+        "Pred min/max:",
+        float(scored["predicted_risk_score"].min()),
+        float(scored["predicted_risk_score"].max()),
+    )
 
 
 if __name__ == "__main__":

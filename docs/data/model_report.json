@@ -18,5 +18,43 @@
     "MAE": 5.4252976333524705,
     "RMSE": 6.733009879532971,
     "R2": 0.8921197578213008
-  }
+  },
+  "model_artifact": "model.xgb.json",
+  "diagnostics": {
+    "fit_plot": "model_diagnostics_fit.png",
+    "residuals_plot": "model_diagnostics_residuals.png"
+  },
+  "feature_importance": {
+    "sst_proxy": 0.05820165202021599,
+    "precip_mm": 0.005609035026282072,
+    "flood_proxy": 0.5584929585456848,
+    "chlorophyll_proxy": 0.07320224493741989,
+    "drought_index": 0.005772524978965521,
+    "pop_density": 0.016227303072810173,
+    "improved_water_access": 0.09820734709501266,
+    "sanitation_access": 0.058093685656785965,
+    "mobility_disruption": 0.12619318068027496
+  },
+  "top_features": [
+    {
+      "feature": "flood_proxy",
+      "importance": 0.5584929585456848
+    },
+    {
+      "feature": "mobility_disruption",
+      "importance": 0.12619318068027496
+    },
+    {
+      "feature": "improved_water_access",
+      "importance": 0.09820734709501266
+    },
+    {
+      "feature": "chlorophyll_proxy",
+      "importance": 0.07320224493741989
+    },
+    {
+      "feature": "sst_proxy",
+      "importance": 0.05820165202021599
+    }
+  ]
 }
