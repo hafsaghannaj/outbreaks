@@ -16,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Outbreaks MVP pipeline runner")
     p.add_argument("--n-points", type=int, default=500)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--min-risk", type=float, default=0.0, help="Only plot points with predicted risk >= min-risk")
     return p.parse_args()
 
 
@@ -34,8 +35,8 @@ def main() -> None:
     # 4) Diagnostics + feature importance (writes pngs + updates model_report.json)
     run([sys.executable, "-m", "src.models.diagnostics"])
 
-    # 5) Render map to results/risk_map.html
-    run([sys.executable, "-m", "src.viz.make_map"])
+    # 5) Render map (optionally filtered)
+    run([sys.executable, "-m", "src.viz.make_map", "--min-risk", str(args.min_risk)])
 
     # 6) Copy outputs into docs/ for GitHub Pages
     run([
@@ -53,6 +54,8 @@ def main() -> None:
     print(" - docs/index.html")
     print(" - docs/assets/model_diagnostics_fit.png")
     print(" - docs/assets/model_diagnostics_residuals.png")
+    if args.min_risk > 0:
+        print(f" - Map filter applied: min-risk >= {args.min_risk}")
 
 
 if __name__ == "__main__":
