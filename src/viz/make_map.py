@@ -41,7 +41,7 @@ def add_legend(m: folium.Map) -> None:
     m.get_root().html.add_child(folium.Element(legend_html))
 
 
-def add_status_box(m: folium.Map, n_points: int, min_risk: float, shown_min: float, shown_max: float) -> None:
+def add_status_box(m: folium.Map, total_points: int, high_points: int, high_threshold: float, shown_min: float, shown_max: float) -> None:
     status_html = f"""
     <div style="
         position: fixed;
@@ -50,12 +50,13 @@ def add_status_box(m: folium.Map, n_points: int, min_risk: float, shown_min: flo
         border: 1px solid #ccc; border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.15);
         font-size: 13px; line-height: 1.4;
-        max-width: 260px;
+        max-width: 280px;
         ">
       <div style="font-weight: 700; margin-bottom: 6px;">Map Status</div>
-      <div><b>Points shown:</b> {n_points}</div>
-      <div><b>Min-risk filter:</b> {min_risk:.1f}</div>
-      <div><b>Shown risk range:</b> {shown_min:.1f} – {shown_max:.1f}</div>
+      <div><b>Total points:</b> {total_points}</div>
+      <div><b>High-risk points (≥ {high_threshold:.0f}):</b> {high_points}</div>
+      <div><b>Risk range (all):</b> {shown_min:.1f} – {shown_max:.1f}</div>
+      <div style="margin-top:6px; color:#444;">Use the layer toggle (top-right) to switch views.</div>
     </div>
     """
     m.get_root().html.add_child(folium.Element(status_html))
@@ -63,32 +64,13 @@ def add_status_box(m: folium.Map, n_points: int, min_risk: float, shown_min: flo
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Render Folium risk map from scored points.")
-    p.add_argument("--min-risk", type=float, default=0.0, help="Only plot points with predicted_risk_score >= min-risk")
+    p.add_argument("--high-threshold", type=float, default=65.0, help="Threshold for the High-risk layer")
     return p.parse_args()
 
 
-def main() -> None:
-    args = parse_args()
-
-    df = pd.read_csv(RESULTS_DIR / "risk_scored_points.csv")
-    if args.min_risk > 0:
-        df = df[df["predicted_risk_score"] >= args.min_risk].copy()
-
-    if df.empty:
-        raise SystemExit(f"No points to plot after filtering with --min-risk {args.min_risk}")
-
-    shown_min = float(df["predicted_risk_score"].min())
-    shown_max = float(df["predicted_risk_score"].max())
-
-    m = folium.Map(
-        location=[float(df["lat"].mean()), float(df["lon"].mean())],
-        zoom_start=6,
-        control_scale=True,
-    )
-    add_legend(m)
-    add_status_box(m, len(df), args.min_risk, shown_min, shown_max)
-
-    cluster = MarkerCluster(name="Risk Points").add_to(m)
+def add_points_layer(m: folium.Map, df: pd.DataFrame, name: str) -> None:
+    fg = folium.FeatureGroup(name=name, show=(name == "All points"))
+    cluster = MarkerCluster(name=f"{name} cluster").add_to(fg)
 
     for _, row in df.iterrows():
         lat = float(row["lat"])
@@ -108,15 +90,45 @@ def main() -> None:
             ),
         ).add_to(cluster)
 
-    folium.LayerControl().add_to(m)
+    fg.add_to(m)
+
+
+def main() -> None:
+    args = parse_args()
+    df_all = pd.read_csv(RESULTS_DIR / "risk_scored_points.csv")
+
+    df_high = df_all[df_all["predicted_risk_score"] >= args.high_threshold].copy()
+
+    if df_all.empty:
+        raise SystemExit("No points to plot.")
+
+    m = folium.Map(
+        location=[float(df_all["lat"].mean()), float(df_all["lon"].mean())],
+        zoom_start=6,
+        control_scale=True,
+    )
+
+    add_legend(m)
+    add_status_box(
+        m,
+        total_points=len(df_all),
+        high_points=len(df_high),
+        high_threshold=args.high_threshold,
+        shown_min=float(df_all["predicted_risk_score"].min()),
+        shown_max=float(df_all["predicted_risk_score"].max()),
+    )
+
+    add_points_layer(m, df_all, "All points")
+    if len(df_high) > 0:
+        add_points_layer(m, df_high, f"High risk (≥ {args.high_threshold:.0f})")
+
+    folium.LayerControl(collapsed=False).add_to(m)
 
     out_path = RESULTS_DIR / "risk_map.html"
     m.save(str(out_path))
-
     print("Wrote:", out_path)
-    print("Points plotted:", len(df))
-    if args.min_risk > 0:
-        print("Applied filter --min-risk:", args.min_risk)
+    print("All points:", len(df_all))
+    print("High-risk points:", len(df_high))
 
 
 if __name__ == "__main__":
