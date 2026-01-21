@@ -32,17 +32,10 @@ def save_residual_plot(residuals: np.ndarray, out_path: Path) -> None:
     plt.close()
 
 
-def get_feature_importance(model, model_name: str) -> dict:
-    if model_name == "XGBRegressor":
-        # XGBoost: feature_importances_ aligns with input column order
-        importances = model.feature_importances_.tolist()
-        return {c: float(i) for c, i in zip(FEATURE_COLS, importances)}
-
-    # sklearn GradientBoosting has feature_importances_
+def get_feature_importance(model) -> dict:
     if hasattr(model, "feature_importances_"):
         importances = model.feature_importances_.tolist()
         return {c: float(i) for c, i in zip(FEATURE_COLS, importances)}
-
     return {c: 0.0 for c in FEATURE_COLS}
 
 
@@ -56,30 +49,24 @@ def main() -> None:
         X, y, test_size=0.2, random_state=42
     )
 
-    model, model_name = _make_model()
+    model, _ = _make_model()
     model.fit(X_train, y_train)
 
     preds = model.predict(X_test)
     residuals = (y_test.to_numpy() - preds)
 
-    # Save plots
     fit_path = RESULTS_DIR / "model_diagnostics_fit.png"
     resid_path = RESULTS_DIR / "model_diagnostics_residuals.png"
     save_fit_plot(y_test.to_numpy(), preds, fit_path)
     save_residual_plot(residuals, resid_path)
 
-    # Update model_report.json with feature importance + diagnostics filenames
     report_path = RESULTS_DIR / "model_report.json"
     with open(report_path, "r") as f:
         report = json.load(f)
 
-    report["diagnostics"] = {
-        "fit_plot": fit_path.name,
-        "residuals_plot": resid_path.name,
-    }
-    report["feature_importance"] = get_feature_importance(model, model_name)
+    report["diagnostics"] = {"fit_plot": fit_path.name, "residuals_plot": resid_path.name}
+    report["feature_importance"] = get_feature_importance(model)
 
-    # Add a sorted top-5 list for readability
     top5 = sorted(report["feature_importance"].items(), key=lambda kv: kv[1], reverse=True)[:5]
     report["top_features"] = [{"feature": k, "importance": float(v)} for k, v in top5]
 
@@ -89,7 +76,7 @@ def main() -> None:
     print("Wrote diagnostics:")
     print(" -", fit_path)
     print(" -", resid_path)
-    print("Updated report with feature importance:", report_path)
+    print("Updated report:", report_path)
 
 
 if __name__ == "__main__":

@@ -23,22 +23,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    # 1) Generate dataset
     run([sys.executable, "-m", "src.data.make_dataset", "--n-points", str(args.n_points), "--seed", str(args.seed)])
-
-    # 2) Train + persist model artifact
     run([sys.executable, "-m", "src.models.train"])
-
-    # 3) Score using saved model
     run([sys.executable, "-m", "src.models.score"])
-
-    # 4) Diagnostics + feature importance (writes pngs + updates model_report.json)
     run([sys.executable, "-m", "src.models.diagnostics"])
-
-    # 5) Render map (optionally filtered)
     run([sys.executable, "-m", "src.viz.make_map", "--min-risk", str(args.min_risk)])
 
-    # 6) Copy outputs into docs/ for GitHub Pages
     run([
         "bash", "-lc",
         "mkdir -p docs/data docs/assets "
@@ -50,10 +40,7 @@ def main() -> None:
     ])
 
     print("\n✅ Pipeline complete. Open:")
-    print(" - results/risk_map.html")
     print(" - docs/index.html")
-    print(" - docs/assets/model_diagnostics_fit.png")
-    print(" - docs/assets/model_diagnostics_residuals.png")
     if args.min_risk > 0:
         print(f" - Map filter applied: min-risk >= {args.min_risk}")
 

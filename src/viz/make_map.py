@@ -9,7 +9,6 @@ from src.config.settings import RESULTS_DIR
 
 
 def risk_color(score: float) -> str:
-    # 5-band coloring
     if score >= 80:
         return "darkred"
     if score >= 65:
@@ -51,19 +50,18 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    scored_path = RESULTS_DIR / "risk_scored_points.csv"
-    df = pd.read_csv(scored_path)
-
+    df = pd.read_csv(RESULTS_DIR / "risk_scored_points.csv")
     if args.min_risk > 0:
         df = df[df["predicted_risk_score"] >= args.min_risk].copy()
 
     if df.empty:
         raise SystemExit(f"No points to plot after filtering with --min-risk {args.min_risk}")
 
-    center_lat = float(df["lat"].mean())
-    center_lon = float(df["lon"].mean())
-
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=6, control_scale=True)
+    m = folium.Map(
+        location=[float(df["lat"].mean()), float(df["lon"].mean())],
+        zoom_start=6,
+        control_scale=True,
+    )
     add_legend(m)
 
     cluster = MarkerCluster(name="Risk Points").add_to(m)
