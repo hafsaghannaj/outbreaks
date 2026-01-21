@@ -24,20 +24,18 @@ TARGET_COL = "risk_score"
 
 
 def _make_model():
+    # Prefer XGBoost if available
     try:
         from xgboost import XGBRegressor
-        return (
-            XGBRegressor(
-                n_estimators=400,
-                max_depth=5,
-                learning_rate=0.05,
-                subsample=0.9,
-                colsample_bytree=0.9,
-                reg_lambda=1.0,
-                random_state=42,
-            ),
-            "XGBRegressor",
-        )
+        return XGBRegressor(
+            n_estimators=400,
+            max_depth=5,
+            learning_rate=0.05,
+            subsample=0.9,
+            colsample_bytree=0.9,
+            reg_lambda=1.0,
+            random_state=42,
+        ), "XGBRegressor"
     except Exception:
         from sklearn.ensemble import GradientBoostingRegressor
         return GradientBoostingRegressor(random_state=42), "GradientBoostingRegressor"
@@ -67,36 +65,42 @@ def train_model(df: pd.DataFrame):
         "target_col": TARGET_COL,
         "metrics": {"MAE": float(mae), "RMSE": float(rmse), "R2": float(r2)},
     }
+
     return model, report
 
 
-def save_model(model, model_name: str, out_dir: Path) -> Path:
+def save_model(model, model_name: str, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if model_name == "XGBRegressor":
+        # Save as XGBoost JSON model
         model_path = out_dir / "model.xgb.json"
         model.save_model(str(model_path))
         return model_path
-
-    import joblib
-    model_path = out_dir / "model.sklearn.joblib"
-    joblib.dump(model, model_path)
-    return model_path
+    else:
+        # Save sklearn model via joblib
+        import joblib
+        model_path = out_dir / "model.sklearn.joblib"
+        joblib.dump(model, model_path)
+        return model_path
 
 
 def main() -> None:
-    df = pd.read_csv(RESULTS_DIR / "synthetic_training_data.csv")
+    data_path = RESULTS_DIR / "synthetic_training_data.csv"
+    df = pd.read_csv(data_path)
+
     model, report = train_model(df)
-
     model_path = save_model(model, report["model"], RESULTS_DIR)
-    report["model_artifact"] = model_path.name
 
-    with open(RESULTS_DIR / "model_report.json", "w") as f:
+    report["model_artifact"] = str(model_path.name)
+
+    report_path = RESULTS_DIR / "model_report.json"
+    with open(report_path, "w") as f:
         json.dump(report, f, indent=2)
 
     print("Trained:", report["model"])
     print("Saved model:", model_path)
-    print("Saved report:", RESULTS_DIR / "model_report.json")
+    print("Saved report:", report_path)
     print("Metrics:", report["metrics"])
 
 
