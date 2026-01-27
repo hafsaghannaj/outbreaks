@@ -16,7 +16,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
     
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -60,15 +59,6 @@
 </head>
 <body>
 
-    <nav class="top-nav">
-      <div class="brand">Outbreaks</div>
-      <div class="tabs">
-        <a class="tab-link active" href="index.html">Risk Map</a>
-        <a class="tab-link" href="cag.html">CAG Assistant</a>
-      </div>
-    </nav>
-    
-    
     <div style="
         position: fixed;
         bottom: 22px; left: 22px; z-index: 9999;
@@ -257,6 +247,125 @@
       .hb-toggle[aria-expanded="true"] .hb-toggle-arrow {
         transform: rotate(0deg);
       }
+      .hb-tabs {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .hb-tab-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(0,0,0,0.12);
+        background: rgba(255,255,255,0.7);
+        font-size: 11px;
+        font-weight: 800;
+        color: #111;
+        text-decoration: none;
+        letter-spacing: .2px;
+      }
+      .hb-tab-link.active {
+        background: rgba(0,0,0,0.9);
+        color: #fff;
+        border-color: transparent;
+      }
+      .cag-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(9, 12, 16, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 12000;
+        padding: 24px;
+      }
+      .cag-modal.open {
+        display: flex;
+      }
+      .cag-modal-card {
+        width: min(920px, 96vw);
+        max-height: 90vh;
+        overflow: auto;
+        background: rgba(255,255,255,0.98);
+        border-radius: 22px;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+        border: 1px solid rgba(0,0,0,0.12);
+        font-family: "Space Grotesk", "Segoe UI", Arial, sans-serif;
+      }
+      .cag-modal-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+      .cag-modal-title {
+        font-size: 22px;
+        font-weight: 800;
+        margin: 0;
+      }
+      .cag-close {
+        border: 1px solid rgba(0,0,0,0.12);
+        background: rgba(0,0,0,0.06);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .cag-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: 18px;
+      }
+      .cag-card {
+        background: rgba(255,255,255,0.9);
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px solid rgba(0,0,0,0.08);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+      }
+      .cag-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #5c6773;
+        font-weight: 800;
+      }
+      .cag-input,
+      .cag-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.12);
+        font-size: 14px;
+        margin-top: 6px;
+      }
+      .cag-button {
+        border: none;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 800;
+        background: #111;
+        color: #fff;
+        cursor: pointer;
+      }
+      .cag-response {
+        min-height: 110px;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(12,16,22,0.06);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .cag-status {
+        font-size: 12px;
+        color: #5c6773;
+      }
+      @media (max-width: 860px) {
+        .cag-grid { grid-template-columns: 1fr; }
+      }
       @media (prefers-reduced-motion: reduce) {
         .hb-panel-body,
         .hb-toggle,
@@ -275,6 +384,9 @@
           <div class="hb-sub">AI + Satellite Early Warning</div>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+          <div class="hb-tabs">
+            <button id="hbCagBtn" class="hb-tab-link" type="button">CAG</button>
+          </div>
           <button id="hbToggle" class="hb-toggle" type="button" aria-expanded="false" aria-controls="hbBody">
             <span class="hb-toggle-label">HOTSPOTS</span>
             <span class="hb-toggle-arrow" aria-hidden="true"></span>
@@ -655,6 +767,124 @@
         // Start collapsed to avoid overlap, user can open.
         setState(false);
       })();
+    </script>
+
+    <div id="cagModal" class="cag-modal" aria-hidden="true">
+      <div class="cag-modal-card" role="dialog" aria-modal="true" aria-labelledby="cagTitle">
+        <div class="cag-modal-header">
+          <div>
+            <h2 id="cagTitle" class="cag-modal-title">CAG Assistant</h2>
+            <div class="cag-status" id="cagStatus">Connected to cached knowledge context.</div>
+          </div>
+          <button id="cagClose" class="cag-close" type="button">Close</button>
+        </div>
+        <div class="cag-grid">
+          <div class="cag-card">
+            <div class="cag-label">Region Key</div>
+            <input id="cagRegion" class="cag-input" type="text" placeholder="example_region" />
+            <div class="cag-label" style="margin-top:12px;">Question</div>
+            <textarea id="cagQuestion" class="cag-textarea" rows="4" placeholder="What actions should we take at elevated risk?"></textarea>
+            <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+              <button id="cagAskBtn" class="cag-button" type="button">Ask CAG</button>
+              <span class="cag-status" id="cagAskStatus">Ready.</span>
+            </div>
+            <div class="cag-response" id="cagAnswer" style="margin-top:12px;">Answer will appear here.</div>
+          </div>
+          <div class="cag-card">
+            <div class="cag-label">WHO Disease Outbreak News</div>
+            <ol id="cagDonList" style="margin: 10px 0 0; padding-left: 18px; font-size: 14px;">
+              <li>Loading latest updates...</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const cagBtn = document.getElementById("hbCagBtn");
+      const cagModal = document.getElementById("cagModal");
+      const cagClose = document.getElementById("cagClose");
+      const cagAskBtn = document.getElementById("cagAskBtn");
+      const cagAnswer = document.getElementById("cagAnswer");
+      const cagAskStatus = document.getElementById("cagAskStatus");
+      const cagRegion = document.getElementById("cagRegion");
+      const cagQuestion = document.getElementById("cagQuestion");
+      const cagDonList = document.getElementById("cagDonList");
+
+      function openCag() {
+        cagModal.classList.add("open");
+        cagModal.setAttribute("aria-hidden", "false");
+        loadDon();
+      }
+
+      function closeCag() {
+        cagModal.classList.remove("open");
+        cagModal.setAttribute("aria-hidden", "true");
+      }
+
+      if (cagBtn) {
+        cagBtn.addEventListener("click", openCag);
+      }
+      cagClose.addEventListener("click", closeCag);
+      cagModal.addEventListener("click", (e) => {
+        if (e.target === cagModal) closeCag();
+      });
+
+      async function loadDon() {
+        try {
+          const res = await fetch("/hotspots/don?limit=6");
+          if (!res.ok) throw new Error("Request failed");
+          const data = await res.json();
+          cagDonList.innerHTML = "";
+          if (!data.items || data.items.length === 0) {
+            cagDonList.innerHTML = "<li>No updates returned.</li>";
+            return;
+          }
+          data.items.forEach((item) => {
+            const li = document.createElement("li");
+            const title = item.title || "Untitled";
+            const date = item.publication_date ? ` • ${item.publication_date.slice(0, 10)}` : "";
+            if (item.url) {
+              li.innerHTML = `<a href="${item.url}" target="_blank" rel="noopener">${title}</a>${date}`;
+            } else {
+              li.textContent = `${title}${date}`;
+            }
+            cagDonList.appendChild(li);
+          });
+        } catch (err) {
+          cagDonList.innerHTML = "<li>Unable to load WHO DON updates.</li>";
+        }
+      }
+
+      cagAskBtn.addEventListener("click", async () => {
+        const question = cagQuestion.value.trim();
+        if (!question) {
+          cagAskStatus.textContent = "Enter a question first.";
+          return;
+        }
+        const regionKey = cagRegion.value.trim();
+        cagAskStatus.textContent = "Contacting CAG API...";
+        cagAnswer.textContent = "Thinking...";
+        try {
+          const payload = { question };
+          if (regionKey) payload.region_key = regionKey;
+          const res = await fetch("/cag/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || "Request failed.");
+          }
+          const data = await res.json();
+          cagAnswer.textContent = data.answer || "No answer returned.";
+          cagAskStatus.textContent = `Cache: ${data.cache_type || "unknown"} | Region: ${data.used_region || "base"}`;
+        } catch (err) {
+          cagAnswer.textContent = "Unable to reach the CAG API. Make sure the server is running.";
+          cagAskStatus.textContent = "Error contacting API.";
+        }
+      });
     </script>
     
     
