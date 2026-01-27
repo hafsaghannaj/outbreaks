@@ -1,0 +1,1 @@
+"""Outbreaks package root."""
