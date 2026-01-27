@@ -43,3 +43,34 @@ This proof-of-concept trains a model on synthetic, multi-modal features and pred
 The `docs/` folder contains a static demo suitable for GitHub Pages:
 - `docs/index.html` (map)
 - `docs/data/` (precomputed outputs)
+
+## CAG Assistant (Cache-Augmented Generation)
+This project includes a CAG layer that answers Q&A using a preloaded knowledge prompt and a KV cache (no retrieval). It is fully separate from the risk-scoring pipeline.
+
+### What’s Included
+- `src/outbreaks/cag/engine.py`: CAG engine with `DynamicCache`, cache cleanup per question, and greedy decoding.
+- `knowledge/playbooks/general.md`: Base operational playbook knowledge.
+- `knowledge/regions/`: Optional region-specific context files.
+- `src/outbreaks/cag/api.py`: FastAPI route `POST /cag/ask`.
+- `src/outbreaks/cag/ask.py`: CLI entrypoint.
+
+### Quick Start
+```bash
+export HF_TOKEN="your_hf_token"
+PYTHONPATH=src python3 -m outbreaks.cag.ask --question "What actions are recommended at elevated risk?" --region "example_region"
+```
+
+### API
+```bash
+PYTHONPATH=src uvicorn outbreaks.cag.api:app --host 0.0.0.0 --port 8000
+```
+
+Request:
+```json
+{ "question": "What should we do at critical risk?", "region_key": "example_region" }
+```
+
+Response:
+```json
+{ "answer": "...", "used_region": "example_region", "cache_type": "region" }
+```
