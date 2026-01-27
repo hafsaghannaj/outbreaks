@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Outbreaks | CAG Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="brand">Outbreaks</div>
+    <div class="tabs">
+      <a class="tab-link" href="index.html">Risk Map</a>
+      <a class="tab-link active" href="cag.html">CAG Assistant</a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <section class="hero">
+      <div>
+        <h1>Cache-Augmented Generation Command Center</h1>
+        <p>
+          Ask questions grounded in regional context and operational playbooks.
+          This interface connects to the CAG API and keeps responses tied to the preloaded
+          knowledge cache.
+        </p>
+
+        <div class="card" style="margin-top: 20px;">
+          <div class="label">Outbreaks Panel</div>
+          <p style="margin: 10px 0 14px; color: var(--muted);">
+            This panel mirrors the map’s operational highlights. Hook it up to your live
+            hotspot feed when ready.
+          </p>
+          <div class="response">
+            <strong>WHO Disease Outbreak News</strong>
+            <ol id="donList" style="margin: 10px 0 0; padding-left: 18px;">
+              <li>Loading latest updates...</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <div class="label">Region Key</div>
+            <input id="regionKey" type="text" placeholder="example_region" />
+          </div>
+          <div>
+            <div class="label">Question</div>
+            <textarea id="question" rows="4" placeholder="What actions should we take at elevated risk?"></textarea>
+          </div>
+          <button id="askBtn">Ask CAG</button>
+          <div class="status-line" id="statusLine">CAG API: waiting for request.</div>
+          <div class="response" id="responseBox">Answer will appear here.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const askBtn = document.getElementById("askBtn");
+    const responseBox = document.getElementById("responseBox");
+    const statusLine = document.getElementById("statusLine");
+    const regionKeyInput = document.getElementById("regionKey");
+    const questionInput = document.getElementById("question");
+
+    async function loadDon() {
+      const list = document.getElementById("donList");
+      try {
+        const res = await fetch("/hotspots/don?limit=6");
+        if (!res.ok) throw new Error("Request failed");
+        const data = await res.json();
+        list.innerHTML = "";
+        if (!data.items || data.items.length === 0) {
+          list.innerHTML = "<li>No updates returned.</li>";
+          return;
+        }
+        data.items.forEach((item) => {
+          const li = document.createElement("li");
+          const title = item.title || "Untitled";
+          const date = item.publication_date ? ` • ${item.publication_date.slice(0, 10)}` : "";
+          if (item.url) {
+            li.innerHTML = `<a href="${item.url}" target="_blank" rel="noopener">${title}</a>${date}`;
+          } else {
+            li.textContent = `${title}${date}`;
+          }
+          list.appendChild(li);
+        });
+      } catch (err) {
+        list.innerHTML = "<li>Unable to load WHO DON updates.</li>";
+      }
+    }
+
+    askBtn.addEventListener("click", async () => {
+      const question = questionInput.value.trim();
+      if (!question) {
+        statusLine.textContent = "Please enter a question.";
+        return;
+      }
+      const regionKey = regionKeyInput.value.trim();
+
+      statusLine.textContent = "Contacting CAG API...";
+      responseBox.textContent = "Thinking...";
+
+      try {
+        const payload = { question };
+        if (regionKey) payload.region_key = regionKey;
+
+        const res = await fetch("/cag/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || "Request failed.");
+        }
+
+        const data = await res.json();
+        responseBox.textContent = data.answer || "No answer returned.";
+        statusLine.textContent = `Cache: ${data.cache_type || "unknown"} | Region: ${data.used_region || "base"}`;
+      } catch (err) {
+        responseBox.textContent = "Unable to reach the CAG API. Make sure the server is running.";
+        statusLine.textContent = "Error contacting API.";
+      }
+    });
+
+    loadDon();
+  </script>
+</body>
+</html>

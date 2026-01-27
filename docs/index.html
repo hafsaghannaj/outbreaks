@@ -13,6 +13,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
     
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -55,6 +59,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.Default.css"/>
 </head>
 <body>
+
+    <nav class="top-nav">
+      <div class="brand">Outbreaks</div>
+      <div class="tabs">
+        <a class="tab-link active" href="index.html">Risk Map</a>
+        <a class="tab-link" href="cag.html">CAG Assistant</a>
+      </div>
+    </nav>
     
     
     <div style="
@@ -103,7 +115,7 @@
       /* Keep Leaflet control area clear (top-right). */
       .hb-panel {
         position: fixed;
-        top: 4px; left: 43px; z-index: 9999;
+        top: 56px; left: 43px; z-index: 9999;
         width: 340px;
         max-height: calc(100vh - 220px);
         overflow: auto;
@@ -119,11 +131,14 @@
       .hb-panel::-webkit-scrollbar { width: 8px; }
       .hb-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 999px; }
       .leaflet-top .leaflet-control-zoom {
-        margin-top: 20px !important;
+        margin-top: 72px !important;
         width: 22px;
         height: 47.5px;
         display: flex;
         flex-direction: column;
+      }
+      .leaflet-top.leaflet-right .leaflet-control-layers {
+        margin-top: 72px !important;
       }
       .leaflet-bar {
         background: rgba(255,255,255,0.3);
