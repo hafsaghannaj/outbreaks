@@ -1,0 +1,10 @@
+services:
+  cag_api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - CAG_MODEL_NAME=${CAG_MODEL_NAME:-gpt2}
+    volumes:
+      - .:/app

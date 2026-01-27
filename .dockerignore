@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.git/
+.gitignore
+docs/
+results/
+*.html
+*.csv
+*.png
+*.pt
+.DS_Store

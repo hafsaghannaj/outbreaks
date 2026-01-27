@@ -74,3 +74,17 @@ Response:
 ```json
 { "answer": "...", "used_region": "example_region", "cache_type": "region" }
 ```
+
+## Docker
+Build and run the CAG API with Docker:
+
+```bash
+docker build -t outbreaks .
+docker run --rm -p 8000:8000 -e HF_TOKEN="your_hf_token" outbreaks
+```
+
+Or with docker-compose:
+```bash
+export HF_TOKEN="your_hf_token"
+docker compose up --build
+```
